@@ -39,7 +39,7 @@ pub fn part2(input: &str) -> u32 {
             if let Some(first) = chars.next() {
                 let alpha = first.to_digit(36).unwrap();
                 self.children[alpha as usize]
-                    .get_or_insert_with(|| Box::new(Trie::default()))
+                    .get_or_insert_with(Box::default)
                     .insert(chars, value);
             } else {
                 self.value = Some(value)
