@@ -1,3 +1,5 @@
+use std::iter;
+
 #[derive(Default)]
 struct Map {
     sort_src: Vec<Triple>,
@@ -16,17 +18,70 @@ impl Map {
             src
         }
     }
+
+    fn find_src_range_sorted(&self, src: Range) -> impl Iterator<Item = Range> + '_ {
+        let left_pp = self
+            .sort_src
+            .partition_point(|triple| triple.src + triple.width < src.start);
+        let mut relevant = &self.sort_src[left_pp..];
+        relevant =
+            &relevant[..relevant.partition_point(|triple| triple.src < src.start + src.width)];
+
+        let mut last_end = src.start;
+        let final_end = src.start + src.width;
+
+        let last_relevant = relevant.last().copied();
+
+        relevant
+            .iter()
+            .flat_map(move |triple| {
+                // region without mapping
+                let gap = Range {
+                    start: last_end,
+                    width: triple.src.saturating_sub(last_end),
+                };
+                last_end += gap.width;
+                // region with mapping
+                let mapped = Range {
+                    start: triple.dest + (last_end - triple.src),
+                    width: (triple.src + triple.width).min(final_end) - last_end,
+                };
+                last_end += mapped.width;
+                [gap, mapped]
+            })
+            .chain(iter::once_with(move || {
+                match last_relevant {
+                    Some(last) => {
+                        // gap from last relevant
+                        Range {
+                            start: last.src + last.width,
+                            width: final_end.saturating_sub(last.src + last.width),
+                        }
+                    }
+                    None => {
+                        // relevant is empty, i.e. no overlapping triples
+                        src
+                    }
+                }
+            }))
+            .filter(|range| range.width > 0)
+    }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
+struct Range {
+    start: u64,
+    width: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
 struct Triple {
     dest: u64,
     src: u64,
     width: u64,
 }
 
-#[aoc_runner_derive::aoc(day5, part1)]
-pub fn part1(input: &str) -> u64 {
+fn parse_input(input: &str) -> (impl Iterator<Item = u64> + '_, Vec<Map>) {
     let (seeds, input) = input.split_once('\n').unwrap();
     let seeds = seeds
         .strip_prefix("seeds: ")
@@ -38,7 +93,7 @@ pub fn part1(input: &str) -> u64 {
     let mut active_map = None;
 
     for line in input.lines().filter(|line| !line.is_empty()) {
-        if let Some(title) = line.strip_suffix(" map:") {
+        if let Some(_title) = line.strip_suffix(" map:") {
             maps.push(Map::default());
             active_map = maps.last_mut();
             continue;
@@ -59,6 +114,13 @@ pub fn part1(input: &str) -> u64 {
         map.sort_src.sort_by_key(|t| t.src);
     }
 
+    (seeds, maps)
+}
+
+#[aoc_runner_derive::aoc(day5, part1)]
+pub fn part1(input: &str) -> u64 {
+    let (seeds, maps) = parse_input(input);
+
     seeds
         .map(|seed| maps.iter().fold(seed, |src, map| map.find_src_sorted(src)))
         .min()
@@ -66,8 +128,37 @@ pub fn part1(input: &str) -> u64 {
 }
 
 #[aoc_runner_derive::aoc(day5, part2)]
-pub fn part2(input: &str) -> u32 {
-    0
+pub fn part2(input: &str) -> u64 {
+    let (seeds, maps) = parse_input(input);
+
+    fn fold_tail_range<B>(
+        range: Range,
+        maps: &[Map],
+        state: B,
+        fold_fn: &mut impl FnMut(B, Range) -> B,
+    ) -> B {
+        if maps.is_empty() {
+            fold_fn(state, range)
+        } else {
+            let (first, rest) = maps.split_first().unwrap();
+            first
+                .find_src_range_sorted(range)
+                .fold(state, |state, dest_range| {
+                    fold_tail_range(dest_range, rest, state, &mut *fold_fn)
+                })
+        }
+    }
+
+    seeds
+        .array_chunks()
+        .map(|[start, width]| Range { start, width })
+        .map(|range| {
+            fold_tail_range(range, &maps[..], u64::MAX, &mut |min, range| {
+                min.min(range.start)
+            })
+        })
+        .min()
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -113,6 +204,6 @@ humidity-to-location map:
 
     #[test]
     fn test_part2() {
-        assert_eq!(super::part2(SAMPLE), 30);
+        assert_eq!(super::part2(SAMPLE), 46);
     }
 }
