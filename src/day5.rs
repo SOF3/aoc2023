@@ -99,7 +99,10 @@ fn parse_input(input: &str) -> (impl Iterator<Item = u64> + '_, Vec<Map>) {
             continue;
         }
 
-        let mut iter = line.splitn(3, ' ').map(|s| s.parse::<u64>().unwrap());
+        let mut iter = line.splitn(3, ' ').map(|s| match s.parse::<u64>() {
+            Ok(x) => x,
+            Err(err) => panic!("parse {s:?}: {err}"),
+        });
         let triple = Triple {
             dest: iter.next().unwrap(),
             src: iter.next().unwrap(),
