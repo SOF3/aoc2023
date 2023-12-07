@@ -32,24 +32,18 @@ pub fn part1(input: &str) -> u64 {
 #[aoc_runner_derive::aoc(day6, part2)]
 pub fn part2(input: &str) -> u64 {
     let mut lines = input.lines();
-    let time = lines
-        .next()
-        .unwrap()
-        .splitn(2, ':')
-        .nth(1)
-        .unwrap()
-        .replace(' ', "")
-        .parse()
-        .unwrap();
-    let dist = lines
-        .next()
-        .unwrap()
-        .splitn(2, ':')
-        .nth(1)
-        .unwrap()
-        .replace(' ', "")
-        .parse()
-        .unwrap();
+
+    fn parse(line: &str) -> u64 {
+        line.splitn(2, ':')
+            .nth(1)
+            .unwrap()
+            .chars()
+            .filter_map(|ch: char| ch.to_digit(10))
+            .fold(0, |sum, digit| sum * 10 + digit as u64)
+    }
+
+    let time = parse(lines.next().unwrap());
+    let dist = parse(lines.next().unwrap());
 
     solve(time, dist)
 }
