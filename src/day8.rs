@@ -86,9 +86,9 @@ struct Graph {
 }
 
 impl Graph {
-    fn count(&self, initial: NodeId, stepper: impl Iterator<Item = Dir>, terminate: impl Fn(NodeId) -> bool) -> usize {
+    fn count(&self, initial: NodeId, stepper: impl Iterator<Item = Dir>, terminate: impl Fn(NodeId) -> bool) -> u32 {
         let mut state = initial;
-        for (steps, dir) in stepper.enumerate() {
+        for (steps, dir) in (0..).zip(stepper) {
             if terminate(state) {
                 return steps;
             }
@@ -105,7 +105,7 @@ pub fn part1(input: &str) -> u32 {
     let stepper = parse_steps(lines.next().unwrap());
     let graph = parse_graph(lines, |_| {});
 
-    graph.count(NodeId::AAA, stepper, |node| node == NodeId::ZZZ) as u32
+    graph.count(NodeId::AAA, stepper, |node| node == NodeId::ZZZ)
 }
 
 #[aoc_runner_derive::aoc(day8, part2, EmpiricalProd)]
@@ -120,7 +120,7 @@ pub fn part2(input: &str) -> u64 {
 
     present[..676].iter_ones().map(|one| {
         let count = graph.count(NodeId::from_usize(one), stepper.clone(), |node| NodeId::AAZ <= node && node <= NodeId::ZZZ);
-        (count / steps_line.len()) as u64
+        (count as u64 / steps_line.len() as u64) as u64
     }).product::<u64>() * steps_line.len() as u64
 }
 
