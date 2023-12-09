@@ -69,17 +69,19 @@ fn get_type_2(hand: [Index; 5]) -> Type {
 
     match joker {
         4 | 5 => Type::FiveOfKind,
-        3 => if normal.contains(&2) {
-            Type::FiveOfKind
-        } else {
-            Type::FourOfKind
-        },
+        3 => {
+            if normal.contains(&2) {
+                Type::FiveOfKind
+            } else {
+                Type::FourOfKind
+            }
+        }
         2 => {
             for &stat in normal {
                 match stat {
                     3 => return Type::FiveOfKind, // 2 + 3
                     2 => return Type::FourOfKind, // 2 + 2, 1
-                    _ => {} // might have a 2 afterwards
+                    _ => {}                       // might have a 2 afterwards
                 }
             }
             // 2 + 1, 1, 1 (still better than TwoPairs 1 + 1, 1 + 1, 1)

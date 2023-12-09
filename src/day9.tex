@@ -1,0 +1,20 @@
+\documentclass{article}
+\usepackage{amsmath}
+\def\Par#1{ { \left( {#1} \right)} }
+\begin{document}
+\begin{align*}
+  f_1(n) &= C(0) \\
+  f_2(n) &= C(1) + \sum_{i=1}^n f_1(i) \\
+    &= C(1) + C(0) n \\
+  f_3(n) &= C(2) + \sum_{i=1}^n f_2(i) \\
+    &= C(2) + C(1) n + \sum_{i=1}^n C(0) i \\
+    &= C(2) + C(1) n + \frac{C(0)}2 n(n+1) \\
+    &= C(2) + \Par{C(1) + \frac{C(0)}2} n + \frac{C(0)}2 n^2 \\
+  f_4(n) &= C(3) + \sum_{i=1}^n f_3(i) \\
+    &= C(3) + C(2) n + \Par{C(1) + \frac{C(0)}2} \frac{n(n+1)}2 + \frac{C(0)}2 \sum_{i=1}^n i^2 \\
+    &= C(3) + C(2) n + \Par{\frac{C(1)}2 + \frac{C(0)}4} \Par{n^2+n} + 
+\end{align*}
+
+I didn't bother to solve the rest, but apparently it is a polynomial.
+
+\end{document}
