@@ -114,10 +114,31 @@ struct Line {
     bid: u16,
 }
 
+/// naive sum(a * b) algorithm
+fn solve_with_mul_add(lines: &[Line]) -> u32 {
+    lines
+        .iter()
+        .enumerate()
+        .map(|(i, line)| (i as u32 + 1) * line.bid as u32)
+        .sum()
+}
+/// prefix sum algorithm, seems to be marginally slower due to lack of vectorization
+fn solve_with_prefix_sum(lines: &[Line]) -> u32 {
+    lines
+        .iter()
+        .rev()
+        .scan(0, |state, line| {
+            *state += line.bid as u32;
+            Some(*state)
+        })
+        .sum()
+}
+
 fn solve(
     input: &str,
     indexer: impl Fn(char) -> Index + Copy,
     get_type: impl Fn([Index; 5]) -> Type,
+    solver: impl Fn(&[Line]) -> u32,
 ) -> u32 {
     let mut lines: Vec<Line> = input
         .lines()
@@ -135,32 +156,27 @@ fn solve(
 
     lines.sort_unstable();
 
-    lines
-        .iter()
-        .enumerate()
-        .map(|(i, line)| (i as u32 + 1) * line.bid as u32)
-        .sum()
-    //
-    /* // prefix sum algorithm, seems to be marginally slower due to lack of vectorization
-    lines
-        .iter()
-        .rev()
-        .scan(0, |state, line| {
-            *state += line.bid as u32;
-            Some(*state)
-        })
-        .sum()
-    */
+    solver(&lines)
 }
 
-#[aoc_runner_derive::aoc(day7, part1)]
-pub fn part1(input: &str) -> u32 {
-    solve(input, indexer_1, get_type_1)
+#[aoc_runner_derive::aoc(day7, part1, MulAdd)]
+pub fn part1_mul_add(input: &str) -> u32 {
+    solve(input, indexer_1, get_type_1, solve_with_mul_add)
 }
 
-#[aoc_runner_derive::aoc(day7, part2)]
-pub fn part2(input: &str) -> u32 {
-    solve(input, indexer_2, get_type_2)
+#[aoc_runner_derive::aoc(day7, part1, PrefixSum)]
+pub fn part1_prefix_sum(input: &str) -> u32 {
+    solve(input, indexer_1, get_type_1, solve_with_prefix_sum)
+}
+
+#[aoc_runner_derive::aoc(day7, part2, MulAdd)]
+pub fn part2_mul_add(input: &str) -> u32 {
+    solve(input, indexer_2, get_type_2, solve_with_mul_add)
+}
+
+#[aoc_runner_derive::aoc(day7, part2, PrefixSum)]
+pub fn part2_prefix_sum(input: &str) -> u32 {
+    solve(input, indexer_2, get_type_2, solve_with_prefix_sum)
 }
 
 #[cfg(test)]
@@ -172,12 +188,12 @@ KTJJT 220
 QQQJA 483";
 
     #[test]
-    fn test_part1() {
-        assert_eq!(super::part1(SAMPLE), 6440);
+    fn test_part1_prefix_sum() {
+        assert_eq!(super::part1_prefix_sum(SAMPLE), 6440);
     }
 
     #[test]
-    fn test_part2() {
-        assert_eq!(super::part2(SAMPLE), 5905);
+    fn test_part2_mul_add() {
+        assert_eq!(super::part2_mul_add(SAMPLE), 5905);
     }
 }
