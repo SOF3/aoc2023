@@ -3,7 +3,7 @@ use std::mem;
 type InputSize = i32;
 type ComputeSize = i64;
 
-const FACTORIAL_MAX_WIDTH: usize = 12;
+const FACTORIAL_MAX_WIDTH: usize = 13;
 const FACTORIAL_SIZE: usize = 22;
 
 struct FactorialSlice([[ComputeSize; FACTORIAL_MAX_WIDTH]; FACTORIAL_SIZE]);
