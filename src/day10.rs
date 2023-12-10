@@ -2,14 +2,16 @@ use std::fmt::Display;
 
 use bitvec::vec::BitVec;
 
+type PosType = u32;
+
 struct Grid<'t> {
     buf: &'t [u8],
-    width_plus_one: usize,
+    width_plus_one: PosType,
 }
 
 impl<'t> Grid<'t> {
     fn parse(buf: &'t str) -> Self {
-        let width_plus_one = buf.find('\n').unwrap() + 1;
+        let width_plus_one = (buf.find('\n').unwrap() + 1) as PosType;
         Self {
             buf: buf.as_bytes(),
             width_plus_one,
@@ -17,27 +19,35 @@ impl<'t> Grid<'t> {
     }
 
     fn next_dir(&self, current_pos: Pos, source_dir: Dir) -> Option<Dir> {
-        source_dir.follow_char(self.buf[current_pos.0])
+        source_dir.follow_char(self.buf[current_pos.into_usize()])
     }
 
     fn print(&self, pos: Pos) -> impl Display {
         let x = pos.0 % self.width_plus_one;
         let y = pos.0 / self.width_plus_one;
-        let ch = self.buf[pos.0] as char;
+        let ch = self.buf[pos.into_usize()] as char;
         format!("({x}, {y}) ({ch:?})")
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-struct Pos(usize);
+struct Pos(PosType);
+
+impl From<usize> for Pos {
+    fn from(value: usize) -> Self {
+        Self(value as PosType)
+    }
+}
 
 impl Pos {
+    fn into_usize(self) -> usize { self.0 as usize }
+
     fn up(&self, grid: &Grid<'_>) -> Option<Self> {
         self.0.checked_sub(grid.width_plus_one).map(Self)
     }
     fn down(&self, grid: &Grid<'_>) -> Option<Self> {
         let new = self.0 + grid.width_plus_one;
-        if new >= grid.buf.len() {
+        if new as usize >= grid.buf.len() {
             None
         } else {
             Some(Self(new))
@@ -118,13 +128,13 @@ impl Dir {
 
 fn identify_loop(input: &str, mut step: impl FnMut(Dir, Pos, Dir)) {
     let grid = Grid::parse(input);
-    let initial = Pos(input.find('S').unwrap());
+    let initial = Pos::from(input.find('S').unwrap());
 
     let mut pos = initial;
     let initial_dir = [Dir::Up, Dir::Down, Dir::Left, Dir::Right]
         .into_iter()
         .filter(|&dir| match initial.go(&grid, dir) {
-            Some(next) => dir.neg().follow_char(grid.buf[next.0]).is_some(),
+            Some(next) => dir.neg().follow_char(grid.buf[next.into_usize()]).is_some(),
             None => false,
         })
         .next()
@@ -151,7 +161,7 @@ fn identify_loop(input: &str, mut step: impl FnMut(Dir, Pos, Dir)) {
 }
 
 #[aoc_runner_derive::aoc(day10, part1)]
-pub fn part1(input: &str) -> u32 {
+pub fn part1(input: &str) -> PosType {
     let mut count = 0;
     identify_loop(input, |_, _, _| count += 1);
     count / 2
@@ -161,11 +171,11 @@ trait Marker: Sized {
     fn init(len: usize) -> Self;
     fn mark(&mut self, pos: usize, up: bool, down: bool);
     fn flush(&mut self) {}
-    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_;
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_;
 }
 
 #[aoc_runner_derive::aoc(day10, part2, BitVec)]
-pub fn part2_bitvec(input: &str) -> u32 {
+pub fn part2_bitvec(input: &str) -> PosType {
     part2::<BitVec>(input)
 }
 
@@ -183,13 +193,13 @@ impl Marker for BitVec {
         }
     }
 
-    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_ {
-        self.iter_ones().map(|pos| (pos % 2 == 0, pos / 2))
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_ {
+        self.iter_ones().map(|pos| (pos % 2 == 0, (pos / 2) as PosType))
     }
 }
 
 #[aoc_runner_derive::aoc(day10, part2, ByteVec)]
-pub fn part2_bytevec(input: &str) -> u32 {
+pub fn part2_bytevec(input: &str) -> PosType {
     part2::<Vec<u8>>(input)
 }
 
@@ -207,21 +217,21 @@ impl Marker for Vec<u8> {
         }
     }
 
-    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_ {
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_ {
         self.iter().copied().enumerate().flat_map(|(pos, mark)| {
-            let up = (mark & 1 > 0).then_some((true, pos));
-            let down = (mark & 2 > 0).then_some((false, pos));
+            let up = (mark & 1 > 0).then_some((true, pos as PosType));
+            let down = (mark & 2 > 0).then_some((false, pos as PosType));
             [up, down].into_iter().flatten()
         })
     }
 }
 
 #[aoc_runner_derive::aoc(day10, part2, MarkList)]
-pub fn part2_marklist(input: &str) -> u32 {
-    part2::<Vec<(usize, u8)>>(input)
+pub fn part2_marklist(input: &str) -> PosType {
+    part2::<Vec<(PosType, u8)>>(input)
 }
 
-impl Marker for Vec<(usize, u8)> {
+impl Marker for Vec<(PosType, u8)> {
     fn init(len: usize) -> Self {
         Vec::with_capacity(len)
     }
@@ -234,14 +244,14 @@ impl Marker for Vec<(usize, u8)> {
         if down {
             mark |= 2
         }
-        self.push((pos, mark));
+        self.push((pos as PosType, mark));
     }
 
     fn flush(&mut self) {
         self.sort_by_key(|(pos, _)| *pos);
     }
 
-    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_ {
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_ {
         self.iter().flat_map(|&(pos, mark)| {
             let up = (mark & 1 > 0).then_some((true, pos));
             let down = (mark & 2 > 0).then_some((false, pos));
@@ -250,17 +260,17 @@ impl Marker for Vec<(usize, u8)> {
     }
 }
 
-fn part2<V: Marker>(input: &str) -> u32 {
+fn part2<V: Marker>(input: &str) -> PosType {
     let mut bv = V::init(input.len());
     identify_loop(input, |initial_dir, pos, last_dir| {
-        match input.as_bytes()[pos.0] {
-            b'J' | b'L' => bv.mark(pos.0, true, false),
-            b'7' | b'F' => bv.mark(pos.0, false, true),
+        match input.as_bytes()[pos.into_usize()] {
+            b'J' | b'L' => bv.mark(pos.into_usize(), true, false),
+            b'7' | b'F' => bv.mark(pos.into_usize(), false, true),
             b'|' => {
-                bv.mark(pos.0, true, true);
+                bv.mark(pos.into_usize(), true, true);
             }
             b'S' => bv.mark(
-                pos.0,
+                pos.into_usize(),
                 initial_dir == Dir::Up || last_dir.neg() == Dir::Up,
                 initial_dir == Dir::Down || last_dir.neg() == Dir::Down,
             ),
@@ -272,10 +282,10 @@ fn part2<V: Marker>(input: &str) -> u32 {
     let mut up_set = false;
     let mut down_set = false;
     let mut last_pos = 0;
-    let mut output = 0u32;
+    let mut output: PosType = 0;
     for (is_up, pos) in bv.iter_halves() {
         if up_set && down_set {
-            output += (pos - last_pos - 1) as u32;
+            output += pos - last_pos - 1;
         }
         if is_up {
             up_set = !up_set
@@ -289,6 +299,8 @@ fn part2<V: Marker>(input: &str) -> u32 {
 
 #[cfg(test)]
 mod tests {
+    use super::PosType;
+
     const SAMPLE1: &str = r"7-F7-
 .FJ|7
 SJLL7
@@ -331,5 +343,5 @@ L7JLJL-JLJLJL--JLJ.L
 
     test_part2!(bitvec, bitvec::vec::BitVec);
     test_part2!(bytevec, Vec<u8>);
-    test_part2!(marklist, Vec<(usize, u8)>);
+    test_part2!(marklist, Vec<(PosType, u8)>);
 }
