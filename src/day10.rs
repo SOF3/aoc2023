@@ -1,9 +1,10 @@
 use std::fmt::Display;
 
+use bitvec::vec::BitVec;
+
 struct Grid<'t> {
     buf: &'t [u8],
     width_plus_one: usize,
-    height: usize,
 }
 
 impl<'t> Grid<'t> {
@@ -12,7 +13,6 @@ impl<'t> Grid<'t> {
         Self {
             buf: buf.as_bytes(),
             width_plus_one,
-            height: buf.len() / width_plus_one,
         }
     }
 
@@ -68,7 +68,7 @@ impl Pos {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Dir {
     Up,
     Down,
@@ -116,13 +116,12 @@ impl Dir {
     }
 }
 
-#[aoc_runner_derive::aoc(day10, part1)]
-pub fn part1(input: &str) -> u32 {
+fn identify_loop(input: &str, mut step: impl FnMut(Dir, Pos, Dir)) {
     let grid = Grid::parse(input);
     let initial = Pos(input.find('S').unwrap());
 
     let mut pos = initial;
-    let mut next_dir = [Dir::Up, Dir::Down, Dir::Left, Dir::Right]
+    let initial_dir = [Dir::Up, Dir::Down, Dir::Left, Dir::Right]
         .into_iter()
         .filter(|&dir| match initial.go(&grid, dir) {
             Some(next) => dir.neg().follow_char(grid.buf[next.0]).is_some(),
@@ -131,18 +130,19 @@ pub fn part1(input: &str) -> u32 {
         .next()
         .unwrap();
 
-    let mut count = 0;
+    let mut next_dir = initial_dir;
+
     loop {
         pos = pos.go(&grid, next_dir).unwrap();
         // eprintln!("go to {} after heading {next_dir:?}", grid.print(pos));
-        count += 1;
+        step(initial_dir, pos, next_dir);
         if pos == initial {
-            break count / 2;
+            break;
         }
         next_dir = match grid.next_dir(pos, next_dir.neg()) {
             Some(dir) => dir,
             None => panic!(
-                "step {count} at {}: cannot follow {} after heading {next_dir:?}",
+                "at {}: cannot follow {} after heading {next_dir:?}",
                 pos.0,
                 grid.print(pos)
             ),
@@ -150,14 +150,146 @@ pub fn part1(input: &str) -> u32 {
     }
 }
 
-#[aoc_runner_derive::aoc(day10, part2)]
-pub fn part2(input: &str) -> u64 {
-    0
+#[aoc_runner_derive::aoc(day10, part1)]
+pub fn part1(input: &str) -> u32 {
+    let mut count = 0;
+    identify_loop(input, |_, _, _| count += 1);
+    count / 2
+}
+
+trait Marker: Sized {
+    fn init(len: usize) -> Self;
+    fn mark(&mut self, pos: usize, up: bool, down: bool);
+    fn flush(&mut self) {}
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_;
+}
+
+#[aoc_runner_derive::aoc(day10, part2, BitVec)]
+pub fn part2_bitvec(input: &str) -> u32 {
+    part2::<BitVec>(input)
+}
+
+impl Marker for BitVec {
+    fn init(len: usize) -> Self {
+        Self::repeat(false, len * 2)
+    }
+
+    fn mark(&mut self, pos: usize, up: bool, down: bool) {
+        if up {
+            self.set(pos * 2, true)
+        }
+        if down {
+            self.set(pos * 2 + 1, true)
+        }
+    }
+
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_ {
+        self.iter_ones().map(|pos| (pos % 2 == 0, pos / 2))
+    }
+}
+
+#[aoc_runner_derive::aoc(day10, part2, ByteVec)]
+pub fn part2_bytevec(input: &str) -> u32 {
+    part2::<Vec<u8>>(input)
+}
+
+impl Marker for Vec<u8> {
+    fn init(len: usize) -> Self {
+        vec![0u8; len]
+    }
+
+    fn mark(&mut self, pos: usize, up: bool, down: bool) {
+        if up {
+            self[pos] |= 1
+        }
+        if down {
+            self[pos] |= 2
+        }
+    }
+
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_ {
+        self.iter().copied().enumerate().flat_map(|(pos, mark)| {
+            let up = (mark & 1 > 0).then_some((true, pos));
+            let down = (mark & 2 > 0).then_some((false, pos));
+            [up, down].into_iter().flatten()
+        })
+    }
+}
+
+#[aoc_runner_derive::aoc(day10, part2, MarkList)]
+pub fn part2_marklist(input: &str) -> u32 {
+    part2::<Vec<(usize, u8)>>(input)
+}
+
+impl Marker for Vec<(usize, u8)> {
+    fn init(len: usize) -> Self {
+        Vec::with_capacity(len)
+    }
+
+    fn mark(&mut self, pos: usize, up: bool, down: bool) {
+        let mut mark = 0u8;
+        if up {
+            mark |= 1
+        }
+        if down {
+            mark |= 2
+        }
+        self.push((pos, mark));
+    }
+
+    fn flush(&mut self) {
+        self.sort_by_key(|(pos, _)| *pos);
+    }
+
+    fn iter_halves(&self) -> impl Iterator<Item = (bool, usize)> + '_ {
+        self.iter().flat_map(|&(pos, mark)| {
+            let up = (mark & 1 > 0).then_some((true, pos));
+            let down = (mark & 2 > 0).then_some((false, pos));
+            [up, down].into_iter().flatten()
+        })
+    }
+}
+
+fn part2<V: Marker>(input: &str) -> u32 {
+    let mut bv = V::init(input.len());
+    identify_loop(input, |initial_dir, pos, last_dir| {
+        match input.as_bytes()[pos.0] {
+            b'J' | b'L' => bv.mark(pos.0, true, false),
+            b'7' | b'F' => bv.mark(pos.0, false, true),
+            b'|' => {
+                bv.mark(pos.0, true, true);
+            }
+            b'S' => bv.mark(
+                pos.0,
+                initial_dir == Dir::Up || last_dir.neg() == Dir::Up,
+                initial_dir == Dir::Down || last_dir.neg() == Dir::Down,
+            ),
+            _ => {}
+        }
+    });
+    bv.flush();
+
+    let mut up_set = false;
+    let mut down_set = false;
+    let mut last_pos = 0;
+    let mut output = 0u32;
+    for (is_up, pos) in bv.iter_halves() {
+        if up_set && down_set {
+            output += (pos - last_pos - 1) as u32;
+        }
+        if is_up {
+            up_set = !up_set
+        } else {
+            down_set = !down_set
+        }
+        last_pos = pos;
+    }
+    output
 }
 
 #[cfg(test)]
 mod tests {
-    const SAMPLE: &str = r"7-F7-
+    const SAMPLE1: &str = r"7-F7-
 .FJ|7
 SJLL7
 |F--J
@@ -166,11 +298,38 @@ LJ.LJ
 
     #[test]
     fn test_part1() {
-        assert_eq!(super::part1(SAMPLE), 8);
+        assert_eq!(super::part1(SAMPLE1), 8);
     }
 
-    #[test]
-    fn test_part2() {
-        assert_eq!(super::part2(SAMPLE), 0);
+    const SAMPLE2: &str = r"FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L
+";
+
+    macro_rules! test_part2 {
+        ($name:ident, $marker:ty) => {
+            paste::paste! {
+                #[test]
+                fn [<test_part2_ $name _sample1>]() {
+                    assert_eq!(super::part2::<$marker>(SAMPLE1), 1);
+                }
+
+                #[test]
+                fn [<test_part2_ $name _sample2>]() {
+                    assert_eq!(super::part2::<$marker>(SAMPLE2), 10);
+                }
+            }
+        };
     }
+
+    test_part2!(bitvec, bitvec::vec::BitVec);
+    test_part2!(bytevec, Vec<u8>);
+    test_part2!(marklist, Vec<(usize, u8)>);
 }
