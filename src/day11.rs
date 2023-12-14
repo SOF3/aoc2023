@@ -1,4 +1,4 @@
-use num_traits::{NumAssign, PrimInt};
+use num_traits::{AsPrimitive, NumAssign, PrimInt};
 
 fn add_dist<DistType: PrimInt + NumAssign>(stats: &[DistType], empty_width: DistType) -> DistType {
     // number of previous points
@@ -25,39 +25,42 @@ fn add_dist<DistType: PrimInt + NumAssign>(stats: &[DistType], empty_width: Dist
     output
 }
 
-fn solve<DistType: PrimInt + NumAssign>(input: &[u8], empty_width: DistType) -> DistType {
+fn solve<DistType: PrimInt + NumAssign + 'static>(input: &[u8], empty_width: DistType) -> DistType
+where
+    usize: AsPrimitive<DistType>,
+{
     let width = input.iter().position(|&b| b == b'\n').unwrap() + 1;
 
     let mut columns = vec![DistType::zero(); width - 1];
     let mut rows = vec![DistType::zero(); input.len().div_ceil(width)];
 
-    input
-        .iter()
-        .enumerate()
-        .filter(|(_, &b)| b == b'#')
-        .for_each(|(index, _)| {
-            let x = index % width;
-            let y = index / width;
-            columns[x] += DistType::one();
-            rows[y] += DistType::one();
-        });
+    for (y, line) in input.chunks(width).enumerate() {
+        for (x, &byte) in line.iter().enumerate() {
+            if byte == b'#' {
+                unsafe {
+                    *columns.get_unchecked_mut(x) += DistType::one();
+                    *rows.get_unchecked_mut(y) += DistType::one();
+                }
+            }
+        }
+    }
 
     add_dist(&columns, empty_width) + add_dist(&rows, empty_width)
 }
 
 #[aoc_runner_derive::aoc(day11, part1)]
-pub fn part1(input: &[u8]) -> u32 {
-    solve(input, 2)
+pub fn part1(input: &str) -> u32 {
+    solve(input.as_bytes(), 2)
 }
 
 #[aoc_runner_derive::aoc(day11, part2)]
-pub fn part2(input: &[u8]) -> u64 {
-    solve(input, 1000_000)
+pub fn part2(input: &str) -> u64 {
+    solve(input.as_bytes(), 1000_000)
 }
 
 #[cfg(test)]
 mod tests {
-    const SAMPLE: &[u8] = b"...#......
+    const SAMPLE: &str = "...#......
 .......#..
 #.........
 ..........
@@ -76,6 +79,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(super::part2(SAMPLE), 0);
+        assert_eq!(super::solve(SAMPLE.as_bytes(), 100), 8410);
     }
 }
