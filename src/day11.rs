@@ -1,4 +1,4 @@
-use num_traits::{PrimInt, NumAssign};
+use num_traits::{NumAssign, PrimInt};
 
 fn add_dist<DistType: PrimInt + NumAssign>(stats: &[DistType], empty_width: DistType) -> DistType {
     // number of previous points
@@ -12,10 +12,14 @@ fn add_dist<DistType: PrimInt + NumAssign>(stats: &[DistType], empty_width: Dist
         output += prev_dist * stat; // add all pairs that terminate on this row/column
         prev_count += stat; // add current row/column to the set of previous points
 
-        let my_width = if stat.is_zero() { empty_width } else { DistType::one() };
+        let my_width = if stat.is_zero() {
+            empty_width
+        } else {
+            DistType::one()
+        };
         prev_dist += prev_count * my_width; // each subsequent row/column will have more distance
-        // the increment in prev_dist must be exactly before the next `output +=`
-        // to prevent counting the points in the next row/column.
+                                            // the increment in prev_dist must be exactly before the next `output +=`
+                                            // to prevent counting the points in the next row/column.
     }
 
     output
@@ -27,12 +31,16 @@ fn solve<DistType: PrimInt + NumAssign>(input: &[u8], empty_width: DistType) -> 
     let mut columns = vec![DistType::zero(); width - 1];
     let mut rows = vec![DistType::zero(); input.len().div_ceil(width)];
 
-    input.iter().enumerate().filter(|(_, &b)| b == b'#').for_each(|(index, _)| {
-        let x = index % width;
-        let y = index / width;
-        columns[x] += DistType::one();
-        rows[y] += DistType::one();
-    });
+    input
+        .iter()
+        .enumerate()
+        .filter(|(_, &b)| b == b'#')
+        .for_each(|(index, _)| {
+            let x = index % width;
+            let y = index / width;
+            columns[x] += DistType::one();
+            rows[y] += DistType::one();
+        });
 
     add_dist(&columns, empty_width) + add_dist(&rows, empty_width)
 }

@@ -40,7 +40,9 @@ impl From<usize> for Pos {
 }
 
 impl Pos {
-    fn into_usize(self) -> usize { self.0 as usize }
+    fn into_usize(self) -> usize {
+        self.0 as usize
+    }
 
     fn up(&self, grid: &Grid<'_>) -> Option<Self> {
         self.0.checked_sub(grid.width_plus_one).map(Self)
@@ -194,7 +196,8 @@ impl Marker for BitVec {
     }
 
     fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_ {
-        self.iter_ones().map(|pos| (pos % 2 == 0, (pos / 2) as PosType))
+        self.iter_ones()
+            .map(|pos| (pos % 2 == 0, (pos / 2) as PosType))
     }
 }
 
