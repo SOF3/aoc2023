@@ -131,12 +131,12 @@ pub fn part2(input: &str) -> u32 {
             ]
         }))
     {
-        if Direction::all().into_iter().any(|dir| {
-            historical[dir as usize][initial_pos]
-                && dir
+        if Direction::all().into_iter().any(|incident_dir| {
+            historical[incident_dir as usize][initial_pos]
+                && incident_dir
                     .reflect(input[initial_pos])
                     .into_iter()
-                    .any(|new_dir| new_dir == dir.neg())
+                    .any(|new_dir| new_dir == initial_dir.neg())
         }) {
             continue;
         }
