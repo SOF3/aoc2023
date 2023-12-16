@@ -37,8 +37,8 @@ where
     for (y, line) in input.chunks(width).enumerate() {
         for (x, &byte) in line.iter().enumerate() {
             if byte == b'#' {
-                    columns[x] += DistType::one();
-                    rows[y] += DistType::one();
+                columns[x] += DistType::one();
+                rows[y] += DistType::one();
             }
         }
     }
