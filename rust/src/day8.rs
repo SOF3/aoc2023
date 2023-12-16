@@ -92,7 +92,7 @@ fn parse_steps(line: &str) -> impl Iterator<Item = Dir> + Clone + '_ {
         .map(|c| match c {
             'L' => Dir::Left,
             'R' => Dir::Right,
-            _ => unsafe { std::hint::unreachable_unchecked() },
+            _ => unreachable!(),
         })
         .cycle()
 }

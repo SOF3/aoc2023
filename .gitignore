@@ -1,2 +1,4 @@
-/target
-/input
+/rust/target
+/data/*.txt
+/jq/output/*
+!/jq/output/.gitkeep

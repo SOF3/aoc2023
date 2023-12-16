@@ -37,10 +37,8 @@ where
     for (y, line) in input.chunks(width).enumerate() {
         for (x, &byte) in line.iter().enumerate() {
             if byte == b'#' {
-                unsafe {
-                    *columns.get_unchecked_mut(x) += DistType::one();
-                    *rows.get_unchecked_mut(y) += DistType::one();
-                }
+                    columns[x] += DistType::one();
+                    rows[y] += DistType::one();
             }
         }
     }
