@@ -3,7 +3,8 @@ use std::{array, cmp, fmt};
 
 macro_rules! log {
     ($($tt:tt)*) => {
-        // println!($($tt)*)
+        #[cfg(debug_assertions)]
+        println!($($tt)*)
     };
 }
 
@@ -76,8 +77,9 @@ struct Path {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg(debug_assertions)]
 struct DebugTrace(Vec<(Pos, Dir, u32)>);
-
+#[cfg(debug_assertions)]
 impl DebugTrace {
     fn observe(&self, pos: Pos, dir: Dir, cost: u32) -> Self {
         let mut new = self.clone();
@@ -92,6 +94,16 @@ impl DebugTrace {
         }
         String::from_utf8(grid).unwrap()
     }
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg(not(debug_assertions))]
+struct DebugTrace;
+#[cfg(not(debug_assertions))]
+impl DebugTrace {
+    fn observe(&self, pos: Pos, dir: Dir, cost: u32) -> Self { Self }
+
+    fn print(&self, grid: &[u8]) -> String { String::new() }
 }
 
 fn cost_of(b: u8) -> u32 { (b - b'0') as u32 }
