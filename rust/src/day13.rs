@@ -7,9 +7,7 @@ pub fn part1(input: &str) -> u32 {
 }
 
 #[aoc_runner_derive::aoc(day13, part2)]
-pub fn part2(input: &str) -> u32 {
-    0
-}
+pub fn part2(input: &str) -> u32 { 0 }
 
 #[cfg(test)]
 mod tests {

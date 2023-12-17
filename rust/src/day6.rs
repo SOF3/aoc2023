@@ -13,18 +13,10 @@ fn solve(time: u64, dist: u64) -> u64 {
 #[aoc_runner_derive::aoc(day6, part1)]
 pub fn part1(input: &str) -> u64 {
     let mut lines = input.lines();
-    let time = lines
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .skip(1)
-        .map(|s| s.parse::<u64>().unwrap());
-    let dist = lines
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .skip(1)
-        .map(|s| s.parse::<u64>().unwrap());
+    let time =
+        lines.next().unwrap().split_ascii_whitespace().skip(1).map(|s| s.parse::<u64>().unwrap());
+    let dist =
+        lines.next().unwrap().split_ascii_whitespace().skip(1).map(|s| s.parse::<u64>().unwrap());
 
     time.zip(dist).map(|(t, d)| solve(t, d)).product()
 }

@@ -12,12 +12,7 @@ enum Direction {
 
 impl Direction {
     fn all() -> [Direction; 4] {
-        [
-            Direction::Left,
-            Direction::Up,
-            Direction::Right,
-            Direction::Down,
-        ]
+        [Direction::Left, Direction::Up, Direction::Right, Direction::Down]
     }
 
     fn follow(self, from: usize, width: usize, full_len: usize) -> Option<usize> {
@@ -60,21 +55,15 @@ impl Direction {
 
 struct ReflectResult(Direction, Option<Direction>);
 impl From<Direction> for ReflectResult {
-    fn from(value: Direction) -> Self {
-        Self(value, None)
-    }
+    fn from(value: Direction) -> Self { Self(value, None) }
 }
 impl From<[Direction; 2]> for ReflectResult {
-    fn from([v1, v2]: [Direction; 2]) -> Self {
-        Self(v1, Some(v2))
-    }
+    fn from([v1, v2]: [Direction; 2]) -> Self { Self(v1, Some(v2)) }
 }
 impl IntoIterator for ReflectResult {
     type Item = Direction;
     type IntoIter = impl Iterator<Item = Direction>;
-    fn into_iter(self) -> Self::IntoIter {
-        iter::once(self.0).chain(self.1)
-    }
+    fn into_iter(self) -> Self::IntoIter { iter::once(self.0).chain(self.1) }
 }
 
 fn trace(energized: &mut [BitVec; 4], input: &[u8], width: usize, pos: usize, dir: Direction) {
@@ -99,11 +88,8 @@ pub fn part1(input: &str) -> u32 {
     let width = input.find('\n').unwrap() + 1;
     let input = input.as_bytes();
 
-    solve(input, width, 0, Direction::Right)
-        .into_iter()
-        .reduce(|a, b| a | b)
-        .unwrap()
-        .count_ones() as u32
+    solve(input, width, 0, Direction::Right).into_iter().reduce(|a, b| a | b).unwrap().count_ones()
+        as u32
 }
 
 #[aoc_runner_derive::aoc(day16, part2)]
@@ -118,18 +104,11 @@ pub fn part2(input: &str) -> u32 {
 
     for (initial_pos, initial_dir) in (0..input.len())
         .step_by(width)
-        .flat_map(|head| {
-            [
-                (head, Direction::Right),
-                (head + width - 2, Direction::Left),
-            ]
-        })
-        .chain((0..width - 1).flat_map(|x| {
-            [
-                (x, Direction::Down),
-                (x + width * (height - 1), Direction::Up),
-            ]
-        }))
+        .flat_map(|head| [(head, Direction::Right), (head + width - 2, Direction::Left)])
+        .chain(
+            (0..width - 1)
+                .flat_map(|x| [(x, Direction::Down), (x + width * (height - 1), Direction::Up)]),
+        )
     {
         if Direction::all().into_iter().any(|incident_dir| {
             historical[incident_dir as usize][initial_pos]
@@ -146,11 +125,7 @@ pub fn part2(input: &str) -> u32 {
             *hist |= new;
         }
 
-        let energy = energized
-            .into_iter()
-            .reduce(|a, b| a | b)
-            .unwrap()
-            .count_ones() as u32;
+        let energy = energized.into_iter().reduce(|a, b| a | b).unwrap().count_ones() as u32;
         max_energy = max_energy.max(energy);
     }
 

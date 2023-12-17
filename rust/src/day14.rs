@@ -127,8 +127,7 @@ pub fn part2(input: &str) -> u32 {
             |x, y| y as usize * full_width + x as usize,
         );
         tilt_horiz(
-            map.chunks_exact_mut(full_width)
-                .map(|line| &mut line[..width as usize]),
+            map.chunks_exact_mut(full_width).map(|line| &mut line[..width as usize]),
             0..width,
             |x| x + 1,
             0,
@@ -141,8 +140,7 @@ pub fn part2(input: &str) -> u32 {
             |x, y| (height - 1 - y) as usize * full_width + x as usize,
         );
         tilt_horiz(
-            map.chunks_exact_mut(full_width)
-                .map(|line| &mut line[..width as usize]),
+            map.chunks_exact_mut(full_width).map(|line| &mut line[..width as usize]),
             (0..width).rev(),
             |x| x.wrapping_sub(1), // x-1 may be -1 in the first column, but it doesn't matter to us
             width - 1,

@@ -3,13 +3,9 @@ use arrayvec::ArrayVec;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Index(u8);
 
-fn indexer_1(b: char) -> Index {
-    Index(12 - "AKQJT98765432".find(b).unwrap() as u8)
-}
+fn indexer_1(b: char) -> Index { Index(12 - "AKQJT98765432".find(b).unwrap() as u8) }
 
-fn indexer_2(b: char) -> Index {
-    Index(12 - "AKQT98765432J".find(b).unwrap() as u8)
-}
+fn indexer_2(b: char) -> Index { Index(12 - "AKQT98765432J".find(b).unwrap() as u8) }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 enum Type {
@@ -111,18 +107,14 @@ fn get_type_2(hand: [Index; 5]) -> Type {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct Line {
-    ty: Type,
+    ty:   Type,
     hand: [Index; 5],
-    bid: u16,
+    bid:  u16,
 }
 
 /// naive sum(a * b) algorithm
 fn solve_with_mul_add(lines: &[Line]) -> u32 {
-    lines
-        .iter()
-        .enumerate()
-        .map(|(i, line)| (i as u32 + 1) * line.bid as u32)
-        .sum()
+    lines.iter().enumerate().map(|(i, line)| (i as u32 + 1) * line.bid as u32).sum()
 }
 /// prefix sum algorithm, seems to be marginally slower due to lack of vectorization
 fn solve_with_prefix_sum(lines: &[Line]) -> u32 {
@@ -162,9 +154,7 @@ fn solve(
 }
 
 #[aoc_runner_derive::aoc(day7, part1, MulAdd)]
-pub fn part1_mul_add(input: &str) -> u32 {
-    solve(input, indexer_1, get_type_1, solve_with_mul_add)
-}
+pub fn part1_mul_add(input: &str) -> u32 { solve(input, indexer_1, get_type_1, solve_with_mul_add) }
 
 #[aoc_runner_derive::aoc(day7, part1, PrefixSum)]
 pub fn part1_prefix_sum(input: &str) -> u32 {
@@ -172,9 +162,7 @@ pub fn part1_prefix_sum(input: &str) -> u32 {
 }
 
 #[aoc_runner_derive::aoc(day7, part2, MulAdd)]
-pub fn part2_mul_add(input: &str) -> u32 {
-    solve(input, indexer_2, get_type_2, solve_with_mul_add)
-}
+pub fn part2_mul_add(input: &str) -> u32 { solve(input, indexer_2, get_type_2, solve_with_mul_add) }
 
 #[aoc_runner_derive::aoc(day7, part2, PrefixSum)]
 pub fn part2_prefix_sum(input: &str) -> u32 {

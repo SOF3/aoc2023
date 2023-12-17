@@ -20,9 +20,7 @@ impl Map {
     }
 
     fn find_src_range_sorted(&self, src: Range) -> impl Iterator<Item = Range> + '_ {
-        let left_pp = self
-            .sort_src
-            .partition_point(|triple| triple.src + triple.width < src.start);
+        let left_pp = self.sort_src.partition_point(|triple| triple.src + triple.width < src.start);
         let mut relevant = &self.sort_src[left_pp..];
         relevant =
             &relevant[..relevant.partition_point(|triple| triple.src < src.start + src.width)];
@@ -36,10 +34,7 @@ impl Map {
             .iter()
             .flat_map(move |triple| {
                 // region without mapping
-                let gap = Range {
-                    start: last_end,
-                    width: triple.src.saturating_sub(last_end),
-                };
+                let gap = Range { start: last_end, width: triple.src.saturating_sub(last_end) };
                 last_end += gap.width;
                 // region with mapping
                 let mapped = Range {
@@ -76,18 +71,15 @@ struct Range {
 
 #[derive(Debug, Clone, Copy)]
 struct Triple {
-    dest: u64,
-    src: u64,
+    dest:  u64,
+    src:   u64,
     width: u64,
 }
 
 fn parse_input(input: &str) -> (impl Iterator<Item = u64> + '_, Vec<Map>) {
     let (seeds, input) = input.split_once('\n').unwrap();
-    let seeds = seeds
-        .strip_prefix("seeds: ")
-        .unwrap()
-        .split(' ')
-        .map(|s| s.parse::<u64>().unwrap());
+    let seeds =
+        seeds.strip_prefix("seeds: ").unwrap().split(' ').map(|s| s.parse::<u64>().unwrap());
 
     let mut maps = Vec::new();
     let mut active_map = None;
@@ -104,8 +96,8 @@ fn parse_input(input: &str) -> (impl Iterator<Item = u64> + '_, Vec<Map>) {
             Err(err) => panic!("parse {s:?}: {err}"),
         });
         let triple = Triple {
-            dest: iter.next().unwrap(),
-            src: iter.next().unwrap(),
+            dest:  iter.next().unwrap(),
+            src:   iter.next().unwrap(),
             width: iter.next().unwrap(),
         };
 
@@ -124,10 +116,7 @@ fn parse_input(input: &str) -> (impl Iterator<Item = u64> + '_, Vec<Map>) {
 pub fn part1(input: &str) -> u64 {
     let (seeds, maps) = parse_input(input);
 
-    seeds
-        .map(|seed| maps.iter().fold(seed, |src, map| map.find_src_sorted(src)))
-        .min()
-        .unwrap()
+    seeds.map(|seed| maps.iter().fold(seed, |src, map| map.find_src_sorted(src))).min().unwrap()
 }
 
 #[aoc_runner_derive::aoc(day5, part2)]
@@ -144,11 +133,9 @@ pub fn part2(input: &str) -> u64 {
             fold_fn(state, range)
         } else {
             let (first, rest) = maps.split_first().unwrap();
-            first
-                .find_src_range_sorted(range)
-                .fold(state, |state, dest_range| {
-                    fold_tail_range(dest_range, rest, state, &mut *fold_fn)
-                })
+            first.find_src_range_sorted(range).fold(state, |state, dest_range| {
+                fold_tail_range(dest_range, rest, state, &mut *fold_fn)
+            })
         }
     }
 
@@ -156,9 +143,7 @@ pub fn part2(input: &str) -> u64 {
         .array_chunks()
         .map(|[start, width]| Range { start, width })
         .map(|range| {
-            fold_tail_range(range, &maps[..], u64::MAX, &mut |min, range| {
-                min.min(range.start)
-            })
+            fold_tail_range(range, &maps[..], u64::MAX, &mut |min, range| min.min(range.start))
         })
         .min()
         .unwrap()

@@ -4,24 +4,17 @@ use bitvec::vec::BitVec;
 
 struct Matrix<'t> {
     line_len: usize,
-    data: &'t [u8],
+    data:     &'t [u8],
 }
 
 impl<'t> Matrix<'t> {
     fn new(data: &'t str) -> Self {
-        Self {
-            line_len: data.find('\n').unwrap() + 1,
-            data: data.as_bytes(),
-        }
+        Self { line_len: data.find('\n').unwrap() + 1, data: data.as_bytes() }
     }
 
-    fn has_x(&self, x: i16) -> bool {
-        (0..self.line_len as i16 - 1).contains(&x)
-    }
+    fn has_x(&self, x: i16) -> bool { (0..self.line_len as i16 - 1).contains(&x) }
 
-    fn has_y(&self, y: i16) -> bool {
-        (0..=(self.data.len() / self.line_len) as i16).contains(&y)
-    }
+    fn has_y(&self, y: i16) -> bool { (0..=(self.data.len() / self.line_len) as i16).contains(&y) }
 
     fn to_index(&self, coord: Vec2) -> Option<usize> {
         if self.has_x(coord.1) && self.has_y(coord.1) {
@@ -32,10 +25,7 @@ impl<'t> Matrix<'t> {
     }
 
     fn to_coord(&self, index: usize) -> Vec2 {
-        Vec2(
-            (index % self.line_len) as i16,
-            (index / self.line_len) as i16,
-        )
+        Vec2((index % self.line_len) as i16, (index / self.line_len) as i16)
     }
 }
 
@@ -43,7 +33,7 @@ impl<'t> Matrix<'t> {
 struct Vec2(i16, i16);
 
 struct IterNumbers<'t> {
-    scan: &'t str,
+    scan:   &'t str,
     offset: usize,
 }
 
@@ -59,10 +49,7 @@ impl<'t> Iterator for IterNumbers<'t> {
         self.offset += noise_len;
         let num_start = self.offset;
 
-        let num_len = self
-            .scan
-            .find(|ch: char| !ch.is_ascii_digit())
-            .unwrap_or(self.scan.len());
+        let num_len = self.scan.find(|ch: char| !ch.is_ascii_digit()).unwrap_or(self.scan.len());
         let parsed = self.scan[..num_len].parse::<u32>().unwrap();
 
         self.scan = &self.scan[num_len..];
@@ -81,9 +68,8 @@ pub fn part1(input: &str) -> u32 {
     let mat = Matrix::new(input);
     let mut active: BitVec<usize, bitvec::order::LocalBits> = BitVec::repeat(false, input.len());
 
-    input
-        .match_indices(|ch: char| !ch.is_ascii_digit() && ch != '.' && ch != '\n')
-        .for_each(|(index, _)| {
+    input.match_indices(|ch: char| !ch.is_ascii_digit() && ch != '.' && ch != '\n').for_each(
+        |(index, _)| {
             let vec = mat.to_coord(index);
             let (mut x_start, mut x_end) = (vec.0 - 1, vec.0 + 1);
             if !mat.has_x(x_start) {
@@ -99,18 +85,14 @@ pub fn part1(input: &str) -> u32 {
                     active[start_index..=end_index].fill(true);
                 }
             }
-        });
+        },
+    );
 
-    iter_numbers(input)
-        .filter(|(range, _)| active[range.clone()].any())
-        .map(|(_, num)| num)
-        .sum()
+    iter_numbers(input).filter(|(range, _)| active[range.clone()].any()).map(|(_, num)| num).sum()
 }
 
 fn lookup_number(suffix: &str) -> u32 {
-    suffix[..suffix
-        .find(|ch: char| !ch.is_ascii_digit())
-        .unwrap_or(suffix.len())]
+    suffix[..suffix.find(|ch: char| !ch.is_ascii_digit()).unwrap_or(suffix.len())]
         .parse::<u32>()
         .unwrap()
 }

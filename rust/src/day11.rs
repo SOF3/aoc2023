@@ -12,11 +12,7 @@ fn add_dist<DistType: PrimInt + NumAssign>(stats: &[DistType], empty_width: Dist
         output += prev_dist * stat; // add all pairs that terminate on this row/column
         prev_count += stat; // add current row/column to the set of previous points
 
-        let my_width = if stat.is_zero() {
-            empty_width
-        } else {
-            DistType::one()
-        };
+        let my_width = if stat.is_zero() { empty_width } else { DistType::one() };
         prev_dist += prev_count * my_width; // each subsequent row/column will have more distance
                                             // the increment in prev_dist must be exactly before the next `output +=`
                                             // to prevent counting the points in the next row/column.
@@ -47,14 +43,10 @@ where
 }
 
 #[aoc_runner_derive::aoc(day11, part1)]
-pub fn part1(input: &str) -> u32 {
-    solve(input.as_bytes(), 2)
-}
+pub fn part1(input: &str) -> u32 { solve(input.as_bytes(), 2) }
 
 #[aoc_runner_derive::aoc(day11, part2)]
-pub fn part2(input: &str) -> u64 {
-    solve(input.as_bytes(), 1000_000)
-}
+pub fn part2(input: &str) -> u64 { solve(input.as_bytes(), 1000_000) }
 
 #[cfg(test)]
 mod tests {

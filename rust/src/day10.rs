@@ -5,17 +5,14 @@ use bitvec::vec::BitVec;
 type PosType = u32;
 
 struct Grid<'t> {
-    buf: &'t [u8],
+    buf:            &'t [u8],
     width_plus_one: PosType,
 }
 
 impl<'t> Grid<'t> {
     fn parse(buf: &'t str) -> Self {
         let width_plus_one = (buf.find('\n').unwrap() + 1) as PosType;
-        Self {
-            buf: buf.as_bytes(),
-            width_plus_one,
-        }
+        Self { buf: buf.as_bytes(), width_plus_one }
     }
 
     fn next_dir(&self, current_pos: Pos, source_dir: Dir) -> Option<Dir> {
@@ -34,15 +31,11 @@ impl<'t> Grid<'t> {
 struct Pos(PosType);
 
 impl From<usize> for Pos {
-    fn from(value: usize) -> Self {
-        Self(value as PosType)
-    }
+    fn from(value: usize) -> Self { Self(value as PosType) }
 }
 
 impl Pos {
-    fn into_usize(self) -> usize {
-        self.0 as usize
-    }
+    fn into_usize(self) -> usize { self.0 as usize }
 
     fn up(&self, grid: &Grid<'_>) -> Option<Self> {
         self.0.checked_sub(grid.width_plus_one).map(Self)
@@ -153,11 +146,9 @@ fn identify_loop(input: &str, mut step: impl FnMut(Dir, Pos, Dir)) {
         }
         next_dir = match grid.next_dir(pos, next_dir.neg()) {
             Some(dir) => dir,
-            None => panic!(
-                "at {}: cannot follow {} after heading {next_dir:?}",
-                pos.0,
-                grid.print(pos)
-            ),
+            None => {
+                panic!("at {}: cannot follow {} after heading {next_dir:?}", pos.0, grid.print(pos))
+            }
         };
     }
 }
@@ -177,14 +168,10 @@ trait Marker: Sized {
 }
 
 #[aoc_runner_derive::aoc(day10, part2, BitVec)]
-pub fn part2_bitvec(input: &str) -> PosType {
-    part2::<BitVec>(input)
-}
+pub fn part2_bitvec(input: &str) -> PosType { part2::<BitVec>(input) }
 
 impl Marker for BitVec {
-    fn init(len: usize) -> Self {
-        Self::repeat(false, len * 2)
-    }
+    fn init(len: usize) -> Self { Self::repeat(false, len * 2) }
 
     fn mark(&mut self, pos: usize, up: bool, down: bool) {
         if up {
@@ -196,20 +183,15 @@ impl Marker for BitVec {
     }
 
     fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_ {
-        self.iter_ones()
-            .map(|pos| (pos % 2 == 0, (pos / 2) as PosType))
+        self.iter_ones().map(|pos| (pos % 2 == 0, (pos / 2) as PosType))
     }
 }
 
 #[aoc_runner_derive::aoc(day10, part2, ByteVec)]
-pub fn part2_bytevec(input: &str) -> PosType {
-    part2::<Vec<u8>>(input)
-}
+pub fn part2_bytevec(input: &str) -> PosType { part2::<Vec<u8>>(input) }
 
 impl Marker for Vec<u8> {
-    fn init(len: usize) -> Self {
-        vec![0u8; len]
-    }
+    fn init(len: usize) -> Self { vec![0u8; len] }
 
     fn mark(&mut self, pos: usize, up: bool, down: bool) {
         if up {
@@ -230,14 +212,10 @@ impl Marker for Vec<u8> {
 }
 
 #[aoc_runner_derive::aoc(day10, part2, MarkList)]
-pub fn part2_marklist(input: &str) -> PosType {
-    part2::<Vec<(PosType, u8)>>(input)
-}
+pub fn part2_marklist(input: &str) -> PosType { part2::<Vec<(PosType, u8)>>(input) }
 
 impl Marker for Vec<(PosType, u8)> {
-    fn init(len: usize) -> Self {
-        Vec::with_capacity(len)
-    }
+    fn init(len: usize) -> Self { Vec::with_capacity(len) }
 
     fn mark(&mut self, pos: usize, up: bool, down: bool) {
         let mut mark = 0u8;
@@ -250,9 +228,7 @@ impl Marker for Vec<(PosType, u8)> {
         self.push((pos as PosType, mark));
     }
 
-    fn flush(&mut self) {
-        self.sort_by_key(|(pos, _)| *pos);
-    }
+    fn flush(&mut self) { self.sort_by_key(|(pos, _)| *pos); }
 
     fn iter_halves(&self) -> impl Iterator<Item = (bool, PosType)> + '_ {
         self.iter().flat_map(|&(pos, mark)| {
@@ -265,20 +241,18 @@ impl Marker for Vec<(PosType, u8)> {
 
 fn part2<V: Marker>(input: &str) -> PosType {
     let mut bv = V::init(input.len());
-    identify_loop(input, |initial_dir, pos, last_dir| {
-        match input.as_bytes()[pos.into_usize()] {
-            b'J' | b'L' => bv.mark(pos.into_usize(), true, false),
-            b'7' | b'F' => bv.mark(pos.into_usize(), false, true),
-            b'|' => {
-                bv.mark(pos.into_usize(), true, true);
-            }
-            b'S' => bv.mark(
-                pos.into_usize(),
-                initial_dir == Dir::Up || last_dir.neg() == Dir::Up,
-                initial_dir == Dir::Down || last_dir.neg() == Dir::Down,
-            ),
-            _ => {}
+    identify_loop(input, |initial_dir, pos, last_dir| match input.as_bytes()[pos.into_usize()] {
+        b'J' | b'L' => bv.mark(pos.into_usize(), true, false),
+        b'7' | b'F' => bv.mark(pos.into_usize(), false, true),
+        b'|' => {
+            bv.mark(pos.into_usize(), true, true);
         }
+        b'S' => bv.mark(
+            pos.into_usize(),
+            initial_dir == Dir::Up || last_dir.neg() == Dir::Up,
+            initial_dir == Dir::Down || last_dir.neg() == Dir::Down,
+        ),
+        _ => {}
     });
     bv.flush();
 

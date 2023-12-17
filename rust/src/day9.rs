@@ -117,14 +117,10 @@ fn solve(
 }
 
 #[aoc_runner_derive::aoc(day9, part1)]
-pub fn part1(input: &[u8]) -> ComputeSize {
-    solve(solve_1, input)
-}
+pub fn part1(input: &[u8]) -> ComputeSize { solve(solve_1, input) }
 
 #[aoc_runner_derive::aoc(day9, part2)]
-pub fn part2(input: &[u8]) -> ComputeSize {
-    solve(solve_2, input)
-}
+pub fn part2(input: &[u8]) -> ComputeSize { solve(solve_2, input) }
 
 #[cfg(test)]
 mod tests {

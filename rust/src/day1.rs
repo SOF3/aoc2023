@@ -1,6 +1,4 @@
-use std::array;
-use std::iter;
-use std::mem;
+use std::{array, iter, mem};
 
 #[aoc_runner_derive::aoc(day1, part1)]
 pub fn part1(input: &str) -> u32 {
@@ -8,9 +6,7 @@ pub fn part1(input: &str) -> u32 {
         .lines()
         .map(|line| {
             fn first_digit_in_iter(iter: impl Iterator<Item = char>) -> u32 {
-                iter.filter_map(|digit| digit.to_digit(10))
-                    .next()
-                    .expect("line has no digits")
+                iter.filter_map(|digit| digit.to_digit(10)).next().expect("line has no digits")
             }
 
             let first = first_digit_in_iter(line.chars());
@@ -24,23 +20,16 @@ pub fn part1(input: &str) -> u32 {
 pub fn part2(input: &str) -> u32 {
     struct Trie {
         children: [Option<Box<Trie>>; 36],
-        value: Option<u32>,
+        value:    Option<u32>,
     }
     impl Default for Trie {
-        fn default() -> Self {
-            Self {
-                children: array::from_fn(|_| None),
-                value: None,
-            }
-        }
+        fn default() -> Self { Self { children: array::from_fn(|_| None), value: None } }
     }
     impl Trie {
         fn insert(&mut self, mut chars: impl Iterator<Item = char>, value: u32) {
             if let Some(first) = chars.next() {
                 let alpha = first.to_digit(36).unwrap();
-                self.children[alpha as usize]
-                    .get_or_insert_with(Box::default)
-                    .insert(chars, value);
+                self.children[alpha as usize].get_or_insert_with(Box::default).insert(chars, value);
             } else {
                 self.value = Some(value)
             }
@@ -106,12 +95,7 @@ pub fn part2(input: &str) -> u32 {
                 panic!("no digit in line")
             }
 
-            let first = find_digit(
-                &mut active_tries,
-                &mut active_tries_swap,
-                line.chars(),
-                &trie,
-            );
+            let first = find_digit(&mut active_tries, &mut active_tries_swap, line.chars(), &trie);
             let last = find_digit(
                 &mut active_tries,
                 &mut active_tries_swap,

@@ -19,18 +19,10 @@ impl NodeId for Packed {
         Self(d2 * 26 * 26 + d1 * 26 + d0)
     }
 
-    fn u16(self) -> u16 {
-        self.0
-    }
-    fn from_u16(i: u16) -> Self {
-        Self(i)
-    }
-    fn usize(self) -> usize {
-        self.0 as usize
-    }
-    fn from_usize(i: usize) -> Self {
-        Self(i as u16)
-    }
+    fn u16(self) -> u16 { self.0 }
+    fn from_u16(i: u16) -> Self { Self(i) }
+    fn usize(self) -> usize { self.0 as usize }
+    fn from_usize(i: usize) -> Self { Self(i as u16) }
 }
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
@@ -44,23 +36,15 @@ impl NodeId for BitShift {
         Self(d2 << 10 | d1 << 5 | d0)
     }
 
-    fn u16(self) -> u16 {
-        self.0
-    }
-    fn from_u16(i: u16) -> Self {
-        Self(i)
-    }
-    fn usize(self) -> usize {
-        self.0 as usize
-    }
-    fn from_usize(i: usize) -> Self {
-        Self(i as u16)
-    }
+    fn u16(self) -> u16 { self.0 }
+    fn from_u16(i: u16) -> Self { Self(i) }
+    fn usize(self) -> usize { self.0 as usize }
+    fn from_usize(i: usize) -> Self { Self(i as u16) }
 }
 
 #[derive(Clone, Copy, Default)]
 struct Node<NodeIdT: NodeId> {
-    left: NodeIdT,
+    left:  NodeIdT,
     right: NodeIdT,
 }
 
@@ -136,24 +120,14 @@ impl<NodeIdT: NodeId> Graph<NodeIdT> {
     }
 }
 
-fn aaa<NodeIdT: NodeId>() -> NodeIdT {
-    NodeIdT::new(*b"AAA")
-}
-fn aaz<NodeIdT: NodeId>() -> NodeIdT {
-    NodeIdT::new(*b"AAZ")
-}
-fn zzz<NodeIdT: NodeId>() -> NodeIdT {
-    NodeIdT::new(*b"ZZZ")
-}
+fn aaa<NodeIdT: NodeId>() -> NodeIdT { NodeIdT::new(*b"AAA") }
+fn aaz<NodeIdT: NodeId>() -> NodeIdT { NodeIdT::new(*b"AAZ") }
+fn zzz<NodeIdT: NodeId>() -> NodeIdT { NodeIdT::new(*b"ZZZ") }
 
 #[aoc_runner_derive::aoc(day8, part1, Packed)]
-pub fn part1_packed(input: &str) -> u32 {
-    part1::<Packed>(input)
-}
+pub fn part1_packed(input: &str) -> u32 { part1::<Packed>(input) }
 #[aoc_runner_derive::aoc(day8, part1, BitShift)]
-pub fn part1_bitshift(input: &str) -> u32 {
-    part1::<BitShift>(input)
-}
+pub fn part1_bitshift(input: &str) -> u32 { part1::<BitShift>(input) }
 
 fn part1<NodeIdT: NodeId>(input: &str) -> u32 {
     let mut lines = input.lines();
@@ -164,13 +138,9 @@ fn part1<NodeIdT: NodeId>(input: &str) -> u32 {
 }
 
 #[aoc_runner_derive::aoc(day8, part2, EmpiricalProd_Packed)]
-pub fn part2_packed(input: &str) -> u64 {
-    part2::<Packed>(input)
-}
+pub fn part2_packed(input: &str) -> u64 { part2::<Packed>(input) }
 #[aoc_runner_derive::aoc(day8, part2, EmpiricalProd_BitShift)]
-pub fn part2_bitshift(input: &str) -> u64 {
-    part2::<BitShift>(input)
-}
+pub fn part2_bitshift(input: &str) -> u64 { part2::<BitShift>(input) }
 
 fn part2<NodeIdT: NodeId>(input: &str) -> u64 {
     let mut lines = input.lines();

@@ -34,19 +34,13 @@ struct Set {
 }
 
 impl Set {
-    fn power(&self) -> u32 {
-        self.r * self.g * self.b
-    }
+    fn power(&self) -> u32 { self.r * self.g * self.b }
 }
 
 impl ops::Add for Set {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
-        Self {
-            r: self.r + rhs.r,
-            g: self.g + rhs.g,
-            b: self.b + rhs.b,
-        }
+        Self { r: self.r + rhs.r, g: self.g + rhs.g, b: self.b + rhs.b }
     }
 }
 
@@ -56,8 +50,7 @@ pub fn part1(input: &str) -> u32 {
         .lines()
         .map(parse_line)
         .filter_map(|(game, mut sets)| {
-            sets.all(|set| set.r <= 12 && set.g <= 13 && set.b <= 14)
-                .then_some(game)
+            sets.all(|set| set.r <= 12 && set.g <= 13 && set.b <= 14).then_some(game)
         })
         .sum()
 }
@@ -68,13 +61,9 @@ pub fn part2(input: &str) -> u32 {
         .lines()
         .map(parse_line)
         .map(|(_, sets)| {
-            sets.reduce(|a, b| Set {
-                r: a.r.max(b.r),
-                g: a.g.max(b.g),
-                b: a.b.max(b.b),
-            })
-            .unwrap()
-            .power()
+            sets.reduce(|a, b| Set { r: a.r.max(b.r), g: a.g.max(b.g), b: a.b.max(b.b) })
+                .unwrap()
+                .power()
         })
         .sum()
 }

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 struct Line<L, R> {
-    left: L,
+    left:  L,
     right: R,
 }
 
@@ -16,7 +16,7 @@ where
         let (_card, rest) = line.split_once(':').unwrap();
         let (left, right) = rest.split_once('|').unwrap();
         Self {
-            left: left
+            left:  left
                 .split(' ')
                 .filter(|s| !s.is_empty())
                 .map(str::parse::<u32>)
@@ -52,7 +52,7 @@ pub fn part1(input: &str) -> u32 {
 pub fn part2(input: &str) -> u32 {
     struct CardStack {
         matches: usize,
-        copies: u32,
+        copies:  u32,
     }
 
     let mut stacks: Vec<_> = input
