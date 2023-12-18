@@ -1,4 +1,5 @@
 use std::collections::BinaryHeap;
+use std::num::NonZeroU8;
 use std::{array, cmp, fmt};
 
 macro_rules! log {
@@ -68,7 +69,7 @@ struct Path {
     total_cost:  cmp::Reverse<u32>,
     /// number of previous steps in last_dir including step to current position
     /// always 1 to 3 except 0 during init
-    dir_steps:   u32,
+    dir_steps:   u8,
     /// direction entering current position
     last_dir:    Dir,
     /// current position
@@ -108,7 +109,21 @@ impl DebugTrace {
 
 fn cost_of(b: u8) -> u32 { (b - b'0') as u32 }
 
-fn trace(grid: Grid<'_>) -> u32 {
+struct AdmitDir {
+    prev_dir:       Dir,
+    prev_dir_steps: u8,
+    next_dir:       Dir,
+    next_dir_steps: u8,
+}
+
+fn solve<VisitState: Default + Copy>(
+    input: &str,
+    admit_dir: impl Fn(AdmitDir) -> bool,
+    admit_visited: impl Fn(&mut VisitState, u8, Dir) -> bool,
+) -> u32 {
+    let width = input.find('\n').unwrap() + 1;
+    let grid = Grid { input: input.trim_end_matches('\n').as_bytes(), width: width as u32 };
+
     let mut heap = BinaryHeap::new();
     heap.push(Path {
         total_cost:  cmp::Reverse(0),
@@ -118,7 +133,8 @@ fn trace(grid: Grid<'_>) -> u32 {
         debug_trace: DebugTrace::default(),
     });
 
-    let mut visited_dirs: [_; 4] = array::from_fn(|_| vec![0; grid.input.len()]);
+    let mut visited_dirs: [_; 4] =
+        array::from_fn(|_| vec![VisitState::default(); grid.input.len()]);
 
     loop {
         let path = heap.pop().unwrap();
@@ -142,19 +158,26 @@ fn trace(grid: Grid<'_>) -> u32 {
             }; // wall
             let cost_inc = cost_of(grid.input[next_pos.0 as usize]);
             let next_cost = path.total_cost.0 + cost_inc;
+
             let next_dir_steps = if next_dir == path.last_dir { path.dir_steps + 1 } else { 1 };
-            if next_dir_steps > 3 {
-                log!("skip straight {next_dir}");
-                continue;
+            if path.pos.0 != 0 {
+                // don't check AdmitDir in the first step
+                if !admit_dir(AdmitDir {
+                    prev_dir: path.last_dir,
+                    prev_dir_steps: path.dir_steps,
+                    next_dir,
+                    next_dir_steps,
+                }) {
+                    log!("admit dir rejected {next_dir} ({next_dir_steps})");
+                    continue;
+                }
             }
 
             let visited_dir = &mut visited_dirs[next_dir as usize];
             let visited = &mut visited_dir[next_pos.0 as usize];
-            if *visited >= 4 - next_dir_steps {
-                log!("skip visited {next_dir}");
+            if !admit_visited(visited, next_dir_steps, next_dir) {
                 continue;
             }
-            *visited = 4 - next_dir_steps;
 
             let next_path = Path {
                 total_cost:  cmp::Reverse(next_cost),
@@ -171,13 +194,46 @@ fn trace(grid: Grid<'_>) -> u32 {
 
 #[aoc_runner_derive::aoc(day17, part1)]
 pub fn part1(input: &str) -> u32 {
-    let width = input.find('\n').unwrap() + 1;
+    solve(
+        input,
+        |admit| admit.next_dir_steps <= 3,
+        |prev_steps, dir_steps, dir| {
+            let max_remaining = 4 - dir_steps;
 
-    trace(Grid { input: input.trim_end_matches('\n').as_bytes(), width: width as u32 })
+            if *prev_steps >= max_remaining {
+                log!("skip visited {dir}");
+                false
+            } else {
+                *prev_steps = max_remaining;
+                true
+            }
+        },
+    )
 }
 
 #[aoc_runner_derive::aoc(day17, part2)]
-pub fn part2(input: &str) -> u32 { 0 }
+pub fn part2(input: &str) -> u32 {
+    solve(
+        input,
+        |admit| {
+            if admit.prev_dir == admit.next_dir {
+                admit.next_dir_steps <= 10
+            } else {
+                admit.prev_dir_steps >= 4
+            }
+        },
+        |prev_state, next_steps, dir| {
+            if next_steps > 1 {
+                return true;
+            }
+            if *prev_state {
+                return false;
+            }
+            *prev_state = true;
+            true
+        },
+    )
+}
 
 #[cfg(test)]
 mod tests {
@@ -202,6 +258,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(super::part2(SAMPLE), 0);
+        assert_eq!(super::part2(SAMPLE), 94);
     }
 }
